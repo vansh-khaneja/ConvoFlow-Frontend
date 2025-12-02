@@ -11,7 +11,7 @@ export default function Navbar() {
 
   const navItems = [
     { href: 'https://github.com/convo-flow', label: 'Star Us', icon: 'github', external: true },
-    { href: 'https://example.com', label: 'Docs', icon: 'docs', external: true },
+    { href: 'https://docs.convoflow.vanshkhaneja.com/', label: 'Docs', icon: 'docs', external: true },
   ];
 
   const isActive = (href: string) => {

@@ -8,6 +8,7 @@ import { useWorkflowNav } from '@/contexts/WorkflowNavContext';
 import WorkflowManager from '@/components/workflow/WorkflowManager';
 import NodeConfigStorage from '@/utils/nodeConfigStorage';
 import ChatPreview from '@/components/workflow/ChatPreview';
+import ExecutionResults from '@/components/workflow/ExecutionResults';
 import { WorkflowLoadingAnimation } from '@/components/workflow/WorkflowLoadingAnimation';
 import { WorkflowCanvasContainer } from '@/components/workflow/WorkflowCanvasContainer';
 import { useWorkflowChangeDetection } from '@/hooks/useWorkflowChangeDetection';
@@ -18,6 +19,13 @@ import { LoadingSpinner } from '@/components/ui-kit/loading-spinner';
 import { toast } from 'sonner';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'bot';
+  content: string;
+  timestamp: Date;
+}
 
 // Force dynamic rendering - this page uses searchParams and is always dynamic
 export const dynamic = 'force-dynamic';
@@ -42,6 +50,7 @@ function WorkflowBuilderContent() {
   const [workflowName, setWorkflowName] = useState('Untitled Workflow');
   const [isSaving, setIsSaving] = useState(false);
   const [chatPreview, setChatPreview] = useState<{ user?: string; bot?: string } | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
   const { setWorkflowMeta, clearWorkflowMeta } = useWorkflowNav();
   
   // Use the custom hook for workflow state management
@@ -137,14 +146,19 @@ function WorkflowBuilderContent() {
   // Use workflow execution hook
   const {
     isExecuting,
-    handleExecuteWorkflow
+    executionResults,
+    handleExecuteWorkflow,
+    handleContinueConversation,
+    setExecutionResults
   } = useWorkflowExecution({
     nodes,
     edges,
     setNodes,
     setExecutingEdges,
     setExecutingNodes,
-    onChatPreview: setChatPreview
+    onChatPreview: setChatPreview,
+    conversationHistory,
+    onConversationUpdate: setConversationHistory
   });
 
   // Initialize workflow management
@@ -293,9 +307,23 @@ function WorkflowBuilderContent() {
       {/* Chat Preview */}
       {chatPreview && (chatPreview.user || chatPreview.bot) && (
         <ChatPreview
-          userMessage={chatPreview.user}
-          botMessage={chatPreview.bot}
-          onClose={() => setChatPreview(null)}
+          messages={conversationHistory}
+          onClose={() => {
+            setChatPreview(null);
+            setConversationHistory([]);
+          }}
+          onSendMessage={handleContinueConversation}
+          isExecuting={isExecuting}
+          isSidebarOpen={showNodeSidebar}
+        />
+      )}
+
+      {/* Execution Results - Only show on errors */}
+      {executionResults && !executionResults.success && (
+        <ExecutionResults
+          results={executionResults}
+          onClose={() => setExecutionResults(null)}
+          onRetry={handleExecuteWorkflow}
         />
       )}
     </div>

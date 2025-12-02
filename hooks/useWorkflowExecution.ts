@@ -5,6 +5,13 @@ import { Node, Edge } from 'reactflow';
 import { toast } from 'sonner';
 import WorkflowExecutor from '@/components/workflow/WorkflowExecutor';
 
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'bot';
+  content: string;
+  timestamp: Date;
+}
+
 interface UseWorkflowExecutionProps {
   nodes: Node[];
   edges: Edge[];
@@ -12,6 +19,8 @@ interface UseWorkflowExecutionProps {
   setExecutingEdges: (edges: Set<string>) => void;
   setExecutingNodes: (nodes: Set<string>) => void;
   onChatPreview: (preview: { user?: string; bot?: string } | null) => void;
+  conversationHistory?: ChatMessage[];
+  onConversationUpdate?: (messages: ChatMessage[]) => void;
 }
 
 export function useWorkflowExecution({
@@ -20,7 +29,9 @@ export function useWorkflowExecution({
   setNodes,
   setExecutingEdges,
   setExecutingNodes,
-  onChatPreview
+  onChatPreview,
+  conversationHistory = [],
+  onConversationUpdate
 }: UseWorkflowExecutionProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResults, setExecutionResults] = useState<any>(null);
@@ -32,29 +43,82 @@ export function useWorkflowExecution({
     isExecuting
   });
 
-  const handleExecuteWorkflow = async () => {
+  const executeWorkflowWithQuery = async (query: string, isContinued: boolean = false) => {
     setIsExecuting(true);
     setExecutionResults(null);
+
+    // Get updated nodes with the new query if it's a continued conversation
+    let updatedNodes = nodes;
+    let updatedConversationHistory = conversationHistory;
     
-    const currentQuery = (() => {
+    if (isContinued && query) {
+      updatedNodes = nodes.map(node => {
+        const nodeSchema = (node.data as any)?.nodeSchema;
+        const isQueryNode = nodeSchema?.name === 'QueryNode' || 
+                           nodeSchema?.node_id?.toLowerCase?.().includes('query');
+        
+        if (isQueryNode) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              parameters: {
+                ...(node.data as any).parameters,
+                query: query
+              }
+            }
+          };
+        }
+        return node;
+      });
+      
+      // Update the nodes state
+      setNodes(updatedNodes);
+      
+      // Add user message to conversation immediately and track it
+      if (onConversationUpdate) {
+        const userMessage: ChatMessage = {
+          id: `user-${Date.now()}`,
+          type: 'user',
+          content: query,
+          timestamp: new Date()
+        };
+        updatedConversationHistory = [...conversationHistory, userMessage];
+        onConversationUpdate(updatedConversationHistory);
+      }
+    }
+
+    const currentQuery = isContinued && query ? query : (() => {
       try {
-        const qNode = nodes.find(n => (n.data as any)?.nodeSchema?.node_id?.toLowerCase?.().includes('query')) as any;
+        const qNode = updatedNodes.find(n => {
+          const nodeSchema = (n.data as any)?.nodeSchema;
+          return nodeSchema?.name === 'QueryNode' || 
+                 nodeSchema?.node_id?.toLowerCase?.().includes('query');
+        }) as any;
         return qNode?.data?.parameters?.query || '';
-      } catch { 
-        return ''; 
+      } catch {
+        return '';
       }
     })();
     
     let previewResponse: string | undefined = undefined;
-    
+
     // Start animation for all edges
     const allEdgeIds = edges.map(edge => edge.id);
-    const allNodeIds = nodes.map(node => node.id);
+    const allNodeIds = updatedNodes.map(node => node.id);
     setExecutingEdges(new Set(allEdgeIds));
     setExecutingNodes(new Set(allNodeIds));
 
     try {
-      const result = await workflowExecutor.executeWorkflow();
+      // Create a new executor with updated nodes
+      const executor = WorkflowExecutor({
+        nodes: updatedNodes,
+        edges,
+        onExecute: () => {},
+        isExecuting: true
+      });
+      
+      const result = await executor.executeWorkflow();
       setExecutionResults(result);
       
       // Check for errors in the execution result
@@ -65,18 +129,29 @@ export function useWorkflowExecution({
       if (result.data?.missing_credentials) {
         const missingCreds = result.data.missing_credentials;
         const nodeCount = Object.keys(missingCreds).length;
-        const allCreds = new Set<string>();
-        Object.values(missingCreds).forEach((creds: any) => {
-          if (Array.isArray(creds)) {
-            creds.forEach((c: string) => allCreds.add(c));
-          } else {
-            allCreds.add(String(creds));
-          }
-        });
+        const allMissingCreds = result.data.all_missing_credentials || [];
+        
+        // Build a more informative message
+        let description = '';
+        if (allMissingCreds.length > 0) {
+          description = `${nodeCount} node(s) require the following credentials: ${allMissingCreds.join(', ')}. `;
+        } else {
+          // Fallback to old method if new format not available
+          const allCreds = new Set<string>();
+          Object.values(missingCreds).forEach((creds: any) => {
+            if (Array.isArray(creds)) {
+              creds.forEach((c: string) => allCreds.add(c));
+            } else {
+              allCreds.add(String(creds));
+            }
+          });
+          description = `${nodeCount} node(s) require credentials: ${Array.from(allCreds).join(', ')}. `;
+        }
+        description += 'Please set them in Settings > Credentials.';
         
         toast.error(`Missing Required Credentials`, {
-          description: `${nodeCount} node(s) require credentials: ${Array.from(allCreds).join(', ')}. Please set them in Settings > Credentials.`,
-          duration: 8000
+          description: description,
+          duration: 10000
         });
       } else if (detectedErrors && Object.keys(detectedErrors).length > 0) {
         // Show toast notifications for detected errors
@@ -94,6 +169,12 @@ export function useWorkflowExecution({
             duration: 5000
           });
         }
+      } else if (result.success) {
+        // Show success toast for successful executions
+        toast.success('Workflow executed successfully!', {
+          description: `Executed ${result.data?.executed_nodes?.length || 0} node(s)`,
+          duration: 3000
+        });
       }
       
       // Update node data with response information
@@ -197,10 +278,35 @@ export function useWorkflowExecution({
         }
       }
       
-      // Show chat preview
-      onChatPreview({ 
-        user: currentQuery, 
-        bot: previewResponse 
+      // Update conversation history with bot response
+      if (previewResponse && onConversationUpdate) {
+        const botMessage: ChatMessage = {
+          id: `bot-${Date.now()}`,
+          type: 'bot',
+          content: previewResponse,
+          timestamp: new Date()
+        };
+
+        if (isContinued) {
+          // For continued conversations, add bot response to the updated conversation
+          // User message was already added before execution started
+          onConversationUpdate([...updatedConversationHistory, botMessage]);
+        } else {
+          // Initialize conversation for first execution
+          const userMessage: ChatMessage = {
+            id: `user-${Date.now() - 1}`,
+            type: 'user',
+            content: currentQuery,
+            timestamp: new Date(Date.now() - 1)
+          };
+          onConversationUpdate([userMessage, botMessage]);
+        }
+      }
+
+      // Show chat preview (legacy support)
+      onChatPreview({
+        user: currentQuery,
+        bot: previewResponse
       });
       
     } catch (error) {
@@ -221,10 +327,20 @@ export function useWorkflowExecution({
     }
   };
 
+  const handleExecuteWorkflow = async () => {
+    await executeWorkflowWithQuery('', false);
+  };
+
+  const handleContinueConversation = async (newQuery: string) => {
+    await executeWorkflowWithQuery(newQuery, true);
+  };
+
   return {
     isExecuting,
     executionResults,
-    handleExecuteWorkflow
+    handleExecuteWorkflow,
+    handleContinueConversation,
+    setExecutionResults
   };
 }
 

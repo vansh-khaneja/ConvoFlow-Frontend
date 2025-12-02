@@ -162,11 +162,14 @@ export default function WorkflowExecutor({
           
           // Handle credential errors specifically
           if (errorData.detail?.missing_credentials) {
-            // Format credential errors for display
+            // Format credential errors for display with node names
             const credErrors: Record<string, string> = {};
+            const nodeInfo = errorData.detail.node_info || {};
+            
             Object.entries(errorData.detail.missing_credentials).forEach(([nodeId, creds]: [string, any]) => {
               const credsList = Array.isArray(creds) ? creds : [creds];
-              credErrors[nodeId] = `Missing credentials: ${credsList.join(', ')}. Please set them in Settings > Credentials.`;
+              const nodeDisplayName = nodeInfo[nodeId]?.display_name || nodeId;
+              credErrors[nodeId] = `${nodeDisplayName}: Missing ${credsList.join(', ')}. Please set them in Settings > Credentials.`;
             });
             
             return {
@@ -174,34 +177,73 @@ export default function WorkflowExecutor({
               data: {
                 errors: credErrors,
                 missing_credentials: errorData.detail.missing_credentials,
+                node_info: errorData.detail.node_info || {},
+                all_missing_credentials: errorData.detail.all_missing_credentials || [],
                 error_messages: errorData.detail.errors || []
               },
               error: errorData.detail.message || 'Missing required credentials for workflow execution'
             };
           }
           
-          // Return error result with parsed error data so it can be displayed in the modal
+          // Handle execution errors (new format from backend)
+          if (errorData.detail?.errors && typeof errorData.detail.errors === 'object') {
+            return {
+              success: false,
+              data: {
+                errors: errorData.detail.errors,
+                executed_nodes: errorData.detail.executed_nodes || [],
+                skipped_nodes: errorData.detail.skipped_nodes || [],
+                response_inputs: {} // Empty response_inputs since execution failed
+              },
+              error: errorData.detail.message || 'Workflow execution failed'
+            };
+          }
+          
+          // Handle generic errors (old format or unexpected errors)
+          const errorMessage = typeof errorData.detail === 'string' ? errorData.detail : 
+                             errorData.message || 
+                             errorData.error || 
+                             `HTTP error! status: ${response.status}`;
+          
           return {
             success: false,
             data: {
-              errors: errorData.detail || errorData.message || errorData.error ? 
-                { 'workflow_error': errorData.detail || errorData.message || errorData.error } : 
-                {},
-              ...errorData
+              errors: { 'workflow_error': errorMessage },
+              response_inputs: {} // Empty response_inputs
             },
-            error: errorData.detail || errorData.message || errorData.error || `HTTP error! status: ${response.status}`
+            error: errorMessage
           };
         }
 
-        const result = JSON.parse(responseText);
+        let result: any;
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('[WorkflowExecutor] Failed to parse response:', parseError, 'Response text:', responseText);
+          return {
+            success: false,
+            data: {},
+            error: `Failed to parse response: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`
+          };
+        }
         
-        // Ensure result has proper structure
+        // Log the result for debugging
+        console.log('[WorkflowExecutor] Parsed result:', result);
+        
+        // Ensure result has proper structure - always include data even if empty
         const formattedResult = {
-          success: result.success !== false,
-          data: result.data || {},
-          error: result.error || null,
+          success: result?.success !== false,
+          data: result?.data || result || {},
+          error: result?.error || null,
           ...result
         };
+        
+        // Ensure data is always an object
+        if (!formattedResult.data || typeof formattedResult.data !== 'object') {
+          formattedResult.data = {};
+        }
+        
+        console.log('[WorkflowExecutor] Formatted result:', formattedResult);
         
         return formattedResult;
         
