@@ -513,6 +513,8 @@ function WorkflowBuilderContent() {
           onSendMessage={handleContinueConversation}
           isExecuting={isExecuting}
           sidebarOffset={isConfigSidebarOpen ? 420 : showNodeSidebar ? 384 : 0}
+          showTourTip={!tourCompleted && tourStep === 7}
+          onTourTipClose={handleTourComplete}
         />
       )}
 

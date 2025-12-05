@@ -6,7 +6,6 @@ import Canvas from '@/components/canvas/Canvas';
 import NodeSelectionSidebar from '@/components/canvas/NodeSelectionSidebar';
 import NodeConfigSidebar from '@/components/canvas/NodeConfigSidebar';
 import { useCanvasNodeConfig } from '@/hooks/useCanvasNodeConfig';
-import FinalTourMessage from '@/components/workflow/FinalTourMessage';
 
 interface WorkflowCanvasContainerProps {
   nodes: Node[];
@@ -230,10 +229,7 @@ export function WorkflowCanvasContainer({
         />
       )}
 
-      {/* Final Tour Message - Step 7 */}
-      {showFinalMessage && (
-        <FinalTourMessage onClose={onTourSkip} sidebarOffset={sidebarOffset} />
-      )}
+      {/* Final Tour Message is now integrated into ChatPreview component */}
     </div>
   );
 }

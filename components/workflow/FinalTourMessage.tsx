@@ -9,21 +9,27 @@ interface FinalTourMessageProps {
 
 export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTourMessageProps) {
   const [chatPreviewPos, setChatPreviewPos] = useState<{ x: number; y: number } | null>(null);
+  const [isChatPreviewReady, setIsChatPreviewReady] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
   const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1080);
 
   useEffect(() => {
-    // Find the ChatPreview element in the DOM
+    // Find the ChatPreview element in the DOM and validate it's fully rendered
     const findChatPreview = () => {
       // Method 1: Find by data attribute (most reliable)
       const chatPreview = document.querySelector('[data-chat-preview="true"]') as HTMLElement;
       if (chatPreview) {
         const rect = chatPreview.getBoundingClientRect();
-        // Return the left edge and vertical center for positioning the tip
-        return {
-          x: rect.left, // Left edge of chat preview
-          y: rect.top + rect.height / 2 // Vertical center
-        };
+        // Validate that the element is actually visible and has valid dimensions
+        // Also check that it's not just positioned off-screen (has meaningful dimensions)
+        if (rect.width > 50 && rect.height > 50 && rect.top >= 0 && rect.left >= 0) {
+          // Return the left edge and vertical center for positioning the tip
+          return {
+            x: rect.left, // Left edge of chat preview
+            y: rect.top + rect.height / 2, // Vertical center
+            isValid: true
+          };
+        }
       }
 
       // Method 2: Find by looking for fixed positioned divs with specific width (380px)
@@ -36,10 +42,13 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
 
       if (chatPreviewByWidth) {
         const rect = chatPreviewByWidth.getBoundingClientRect();
-        return {
-          x: rect.left,
-          y: rect.top + rect.height / 2
-        };
+        if (rect.width > 50 && rect.height > 50 && rect.top >= 0 && rect.left >= 0) {
+          return {
+            x: rect.left,
+            y: rect.top + rect.height / 2,
+            isValid: true
+          };
+        }
       }
 
       // Method 3: Find by text content "Chat Preview" or "Run preview"
@@ -54,10 +63,13 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
         const container = chatPreviewByText.closest('[style*="fixed"]') as HTMLElement;
         if (container) {
           const rect = container.getBoundingClientRect();
-          return {
-            x: rect.left,
-            y: rect.top + rect.height / 2
-          };
+          if (rect.width > 50 && rect.height > 50 && rect.top >= 0 && rect.left >= 0) {
+            return {
+              x: rect.left,
+              y: rect.top + rect.height / 2,
+              isValid: true
+            };
+          }
         }
       }
 
@@ -74,22 +86,66 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
       const x = viewportWidth - rightPosition - chatPreviewWidth;
       const y = viewportHeight - bottomOffset - 200; // Approximate center
       
-      return { x, y };
+      return { x, y, isValid: false };
+    };
+
+    // Track when we first found a valid ChatPreview element
+    let firstValidDetection: number | null = null;
+    const TRANSITION_DELAY = 400; // 300ms CSS transition + 100ms buffer
+
+    // Function to update position and check if ChatPreview is ready
+    const updatePosition = () => {
+      const result = findChatPreview();
+      if (result) {
+        const { isValid, ...pos } = result;
+        setChatPreviewPos(pos);
+        
+        // If we found a valid position from actual ChatPreview element
+        if (isValid && pos.x > 0 && pos.y > 0 && pos.x < window.innerWidth && pos.y < window.innerHeight) {
+          const now = Date.now();
+          
+          // Record when we first detected a valid element
+          if (firstValidDetection === null) {
+            firstValidDetection = now;
+          }
+          
+          // Mark as ready only after waiting for CSS transition to complete
+          if (firstValidDetection !== null && (now - firstValidDetection) >= TRANSITION_DELAY) {
+            setIsChatPreviewReady(true);
+            return true; // Found valid position and transition completed
+          }
+          
+          return true; // Found valid position (but transition may not be complete)
+        }
+      }
+      // Reset detection time if we lost the element
+      firstValidDetection = null;
+      return false; // Not ready yet
     };
 
     // Use a polling approach to find ChatPreview when it appears
     let attempts = 0;
-    const maxAttempts = 30; // Try for 3 seconds (30 * 100ms)
+    const maxAttempts = 60; // Try for 6 seconds (60 * 100ms) - increased for slow responses
+    let pollInterval: NodeJS.Timeout | null = null;
+    let updateInterval: NodeJS.Timeout | null = null;
     
     const findAndSetPosition = () => {
-      const pos = findChatPreview();
-      // Always set position, even if it's the fallback
-      if (pos) {
-        setChatPreviewPos(pos);
-        // If we found a valid position (not fallback), stop polling
-        if (pos.x > 0 && pos.y > 0 && pos.x < window.innerWidth && pos.y < window.innerHeight) {
-          return; // Found valid position, stop
+      const found = updatePosition();
+      
+      if (found) {
+        // Found valid position, stop initial polling but keep updating
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
         }
+        
+        // Keep updating position frequently to catch transition completion and any position changes
+        if (!updateInterval) {
+          updateInterval = setInterval(() => {
+            updatePosition();
+          }, 50); // Very frequent updates to catch transition completion quickly
+        }
+        return;
       }
       
       // Continue polling if we haven't found a good position yet
@@ -97,14 +153,32 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
         attempts++;
         setTimeout(findAndSetPosition, 100);
       } else {
-        // Use fallback after max attempts - always show something
-        const fallbackPos = findChatPreview();
-        setChatPreviewPos(fallbackPos || { x: window.innerWidth - 400, y: window.innerHeight - 200 });
+        // After max attempts, stop polling but keep trying with slower interval
+        if (!updateInterval) {
+          updateInterval = setInterval(() => {
+            updatePosition();
+          }, 300);
+        }
       }
     };
 
     // Initial check
     findAndSetPosition();
+
+    // Also use MutationObserver to watch for ChatPreview being added to DOM
+    const observer = new MutationObserver(() => {
+      updatePosition();
+    });
+
+    // Observe the document body for changes
+    if (typeof document !== 'undefined') {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+    }
 
     // Update on resize
     const handleResize = () => {
@@ -112,8 +186,7 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
         setViewportWidth(window.innerWidth);
         setViewportHeight(window.innerHeight);
       }
-      const pos = findChatPreview();
-      if (pos) setChatPreviewPos(pos);
+      updatePosition();
     };
 
     // Set initial viewport dimensions
@@ -125,6 +198,13 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
+      observer.disconnect();
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
     };
   }, [sidebarOffset]);
 
@@ -150,7 +230,9 @@ export default function FinalTourMessage({ onClose, sidebarOffset = 0 }: FinalTo
         style={{
           left: `${Math.max(16, Math.min(displayPos.x - 300, viewportWidth - 320))}px`, // Position to the left of chat preview, with margin, ensure it's on screen
           top: `${Math.max(16, Math.min(displayPos.y, viewportHeight - 200))}px`, // Vertically centered, ensure it's on screen
-          transform: 'translateY(-50%)'
+          transform: 'translateY(-50%)',
+          opacity: isChatPreviewReady ? 1 : 0.3, // Fade in when ChatPreview is ready
+          transition: 'opacity 0.3s ease-out, left 0.2s ease-out, top 0.2s ease-out'
         }}
       >
         <div className="relative w-72 rounded-lg border border-[var(--primary)]/40 bg-gradient-to-r from-[var(--primary)]/10 to-[var(--primary)]/5 px-3 py-2.5 text-xs shadow-lg pointer-events-auto">
