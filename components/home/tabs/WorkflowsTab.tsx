@@ -92,12 +92,14 @@ export function WorkflowsTab({ userName }: { userName: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
+      {/* Header Section - Responsive Layout */}
+      <div className="space-y-4">
+        {/* Title and Count */}
+        <div>
           <h3 className="text-lg font-semibold mb-1">Saved Workflows</h3>
-          <div className="flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
+          <div className="flex items-center gap-1.5 text-sm text-[var(--text-muted)] flex-wrap">
             <span>{sortedItems.length} Workflow{sortedItems.length !== 1 ? 's' : ''}</span>
-            <span>|</span>
+            <span className="hidden sm:inline">|</span>
             <Select value={sortFilter} onValueChange={setSortFilter}>
               <SelectTrigger className="h-auto p-0 border-0 bg-transparent text-[var(--text-muted)] text-sm focus:ring-0 hover:text-[var(--foreground)] w-auto min-w-[120px]">
                 <SelectValue>
@@ -113,45 +115,50 @@ export function WorkflowsTab({ userName }: { userName: string }) {
             </Select>
           </div>
         </div>
-        <div className="flex-1 max-w-xs">
-          <Input
-            type="text"
-            placeholder="Search workflows..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={<Search className="h-4 w-4" />}
-            className="bg-[var(--card-bg)] border-[var(--border-color)] rounded-[5px]"
-          />
-        </div>
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleFileLoad}
-            className="hidden"
-            id="workflow-file-input-list"
-          />
-          <Button 
-            onClick={() => fileInputRef.current?.click()} 
-            disabled={busy}
-          >
-            {busy ? (
-              <>
-                <LoadingSpinner size="sm" className="mr-2" />
-                Loading...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Load Workflow
-              </>
-            )}
-          </Button>
+        
+        {/* Search and Load Button - Stack on mobile, side by side on desktop */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="flex-1 w-full sm:max-w-xs">
+            <Input
+              type="text"
+              placeholder="Search workflows..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+              className="bg-[var(--card-bg)] border-[var(--border-color)] rounded-[5px] w-full"
+            />
+          </div>
+          <div className="flex-shrink-0">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleFileLoad}
+              className="hidden"
+              id="workflow-file-input-list"
+            />
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={busy}
+              className="w-full sm:w-auto"
+            >
+              {busy ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Load Workflow
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
         {sortedItems.map((w: any) => (
           <WorkflowCard
             key={w.id}

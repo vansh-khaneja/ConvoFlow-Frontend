@@ -1120,3 +1120,13 @@ button[class*="bg-[var(--primary)]"] svg * {
 [data-radix-popper-arrow] {
   display: none !important;
 }
+
+/* Mobile Blocker - Hide content when mobile is detected */
+body.mobile-blocked > *:not([data-mobile-blocker]) {
+  display: none !important;
+}
+
+/* Ensure mobile blocker is always visible */
+[data-mobile-blocker] {
+  display: block !important;
+}

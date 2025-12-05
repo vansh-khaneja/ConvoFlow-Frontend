@@ -137,31 +137,40 @@ export function CredentialsTab({ isCompact = false }: { isCompact?: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
+      {/* Header Section - Responsive Layout */}
+      <div className="space-y-4">
+        {/* Title and Count */}
+        <div>
           <h3 className="text-lg font-semibold mb-1">Saved Credentials</h3>
           <div className="flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
             <span>{configuredItems.length} Credential{configuredItems.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
-        <div className="flex-1 max-w-xs">
-          <Input
-            type="text"
-            placeholder="Search credentials..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            leftIcon={<Search className="h-4 w-4" />}
-            className="bg-[var(--card-bg)] border-[var(--border-color)] rounded-[5px]"
-          />
-        </div>
-        <div>
-          <Button onClick={() => {
-            setShowModal(true);
-            setCurrentPage(0);
-          }} className="h-9">
-            <Plus className="h-3.5 w-3.5" />
-            Create Secret
-          </Button>
+        
+        {/* Search and Create Button - Stack on mobile, side by side on desktop */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="flex-1 w-full sm:max-w-xs">
+            <Input
+              type="text"
+              placeholder="Search credentials..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+              className="bg-[var(--card-bg)] border-[var(--border-color)] rounded-[5px] w-full"
+            />
+          </div>
+          <div className="flex-shrink-0">
+            <Button 
+              onClick={() => {
+                setShowModal(true);
+                setCurrentPage(0);
+              }} 
+              className="h-9 w-full sm:w-auto"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Create Secret
+            </Button>
+          </div>
         </div>
       </div>
 

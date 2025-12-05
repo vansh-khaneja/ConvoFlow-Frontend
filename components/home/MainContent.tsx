@@ -19,15 +19,15 @@ export function MainContent({ userName, activeTab }: MainContentProps) {
   if (activeTab === 'credentials') {
     return (
       <div className="flex-1 bg-[var(--background)] overflow-auto">
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-8">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl flex items-center gap-3 mb-2">
-                  <Key className="h-10 w-10" />
-                  Credentials
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl flex items-center gap-2 sm:gap-3 mb-2">
+                  <Key className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex-shrink-0" />
+                  <span className="truncate">Credentials</span>
                 </h1>
-                <p className="text-[var(--text-muted)] text-lg">
+                <p className="text-[var(--text-muted)] text-sm sm:text-base lg:text-lg">
                   Manage your API keys and credentials
                 </p>
               </div>
@@ -43,15 +43,15 @@ export function MainContent({ userName, activeTab }: MainContentProps) {
   if (activeTab === 'templates') {
     return (
       <div className="flex-1 bg-[var(--background)] overflow-auto">
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-8">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl flex items-center gap-3 mb-2">
-                  <Layers className="h-10 w-10" />
-                  Templates
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl flex items-center gap-2 sm:gap-3 mb-2">
+                  <Layers className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex-shrink-0" />
+                  <span className="truncate">Templates</span>
                 </h1>
-                <p className="text-[var(--text-muted)] text-lg">
+                <p className="text-[var(--text-muted)] text-sm sm:text-base lg:text-lg">
                   Start with pre-built workflow templates
                 </p>
               </div>
@@ -70,22 +70,28 @@ export function MainContent({ userName, activeTab }: MainContentProps) {
 
   return (
     <div className="flex-1 bg-[var(--background)] overflow-auto">
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl flex items-center gap-3 mb-2">
-                <Workflow className="h-10 w-10" />
-                Overview
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl flex items-center gap-2 sm:gap-3 mb-2">
+                <Workflow className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex-shrink-0" />
+                <span className="truncate">Overview</span>
               </h1>
-              <p className="text-[var(--text-muted)] text-lg">
+              <p className="text-[var(--text-muted)] text-sm sm:text-base lg:text-lg">
                 Manage your workflows and executions
               </p>
             </div>
-            <Button size="lg" onClick={() => (window.location.href = '/workflow')}>
-              <Plus className="h-5 w-5" />
-              Create Workflow
-            </Button>
+            <div className="flex-shrink-0">
+              <Button 
+                size="lg" 
+                onClick={() => (window.location.href = '/workflow')}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="whitespace-nowrap">Create Workflow</span>
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     shortcut: "/brand/favicon.ico",
     apple: "/brand/favicon.ico",
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({

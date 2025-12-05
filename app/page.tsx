@@ -63,8 +63,12 @@ export default function Home() {
       <Navbar />
       <div className="flex h-screen bg-[var(--background)] pt-16">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <div className="flex-1 transition-all duration-300 ease-default" style={{ marginLeft: '256px' }}>
-          <MainContent userName={userName} activeTab={activeTab} />
+        <div 
+          className="flex-1 transition-all duration-300 ease-default lg:ml-[256px]"
+        >
+          <div className="pt-12 lg:pt-0">
+            <MainContent userName={userName} activeTab={activeTab} />
+          </div>
         </div>
       </div>
     </>

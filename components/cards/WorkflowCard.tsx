@@ -268,7 +268,7 @@ export function WorkflowCard({
     <TooltipProvider delayDuration={200}>
       <div className="h-full">
         <Card
-          className="cursor-pointer group h-full flex flex-col rounded-[5px] min-h-[160px] overflow-hidden transition-all duration-200"
+          className="cursor-pointer group h-full flex flex-col rounded-[5px] min-h-[160px] overflow-hidden transition-all duration-200 w-full max-w-full"
           style={{
             background: cardBg,
             border: `1px solid ${borderColor}`,
@@ -284,31 +284,31 @@ export function WorkflowCard({
           }}
           onClick={onClick}
         >
-        <CardHeader className="p-4 pb-2 flex-shrink-0">
+        <CardHeader className="p-4 pb-2 flex-shrink-0 overflow-hidden">
           <CardTitle 
-            className="text-lg font-semibold flex-1 min-w-0 line-clamp-2 leading-tight" 
-            style={{ color: textColor, fontSize: '17px' }}
+            className="text-base sm:text-lg font-semibold flex-1 min-w-0 line-clamp-2 leading-tight break-words" 
+            style={{ color: textColor }}
           >
             {name}
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-3 pt-1 flex-shrink-0">
+        <CardContent className="px-4 pb-3 pt-1 flex-shrink-0 overflow-hidden">
           {/* Primary Metadata - Date and Nodes */}
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-2 sm:gap-4 mb-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm" style={{ color: mutedTextColor }}>
-              <span className="font-medium">{formattedDate}</span>
+              <span className="font-medium whitespace-nowrap">{formattedDate}</span>
             </div>
             {metadata.nodeCount !== undefined && (
               <div className="flex items-center gap-2 text-sm" style={{ color: mutedTextColor }}>
-                <Layers className="h-[18px] w-[18px]" style={{ color: 'currentColor' }} />
-                <span className="font-medium">
+                <Layers className="h-[18px] w-[18px] flex-shrink-0" style={{ color: 'currentColor' }} />
+                <span className="font-medium whitespace-nowrap">
                   {metadata.nodeCount} {metadata.nodeCount === 1 ? 'node' : 'nodes'}
                 </span>
               </div>
             )}
             {/* Deployed Status Indicator - Only show if deployed */}
             {metadata.isDeployed && (
-              <div className="ml-auto mr-2">
+              <div className="ml-auto mr-0 sm:mr-2 flex-shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div>
@@ -329,7 +329,7 @@ export function WorkflowCard({
           </div>
 
           {/* Node Type Icons and Action Buttons - Always Visible */}
-          <div className="flex items-center gap-2 mb-2 mt-8 flex-wrap">
+          <div className="flex items-center gap-2 mb-2 mt-4 sm:mt-8 flex-wrap min-w-0">
             {/* Node Type Icons */}
             {metadata.nodeTypes && metadata.nodeTypes.length > 0 && (
               <>
@@ -401,7 +401,7 @@ export function WorkflowCard({
             )}
 
             {/* Action Buttons - Copy and Delete - Show on Hover */}
-            <div className="flex items-center gap-1.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex items-center gap-1.5 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button

@@ -84,7 +84,7 @@ export function DeploymentDetailsSidebar({
 
       {/* Sidebar */}
       <div
-        className="fixed right-0 top-16 w-[500px] h-[calc(100vh-4rem)] z-50 shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-lg border-t"
+        className="fixed right-0 top-16 w-full sm:w-[500px] h-[calc(100vh-4rem)] z-50 shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-lg border-t"
         style={{
           backgroundColor: backgroundColor,
           borderLeft: `1px solid ${borderColor}`,
@@ -93,16 +93,16 @@ export function DeploymentDetailsSidebar({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between p-6 border-b flex-shrink-0"
+          className="flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0"
           style={{
             borderColor: borderColor
           }}
         >
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-semibold truncate" style={{ color: textColor }}>
+            <h2 className="text-lg sm:text-xl font-semibold truncate" style={{ color: textColor }}>
               {deployment.name}
             </h2>
-            <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
+            <p className="text-xs sm:text-sm mt-1" style={{ color: mutedTextColor }}>
               Deployment Details
             </p>
           </div>
@@ -110,7 +110,7 @@ export function DeploymentDetailsSidebar({
             variant="ghost"
             size="sm" 
             onClick={onClose}
-            className="ml-4"
+            className="ml-2 sm:ml-4 flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -118,7 +118,7 @@ export function DeploymentDetailsSidebar({
 
         {/* Content */}
         <div 
-          className="flex-1 overflow-y-auto p-6 space-y-5 deployment-sidebar-scroll" 
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 deployment-sidebar-scroll" 
           style={{ 
             scrollbarWidth: 'thin', 
             scrollbarColor: 'rgba(139, 92, 246, 0.3) transparent' 
@@ -174,33 +174,33 @@ export function DeploymentDetailsSidebar({
             <label className="text-xs font-semibold uppercase tracking-wide mb-3 block" style={{ color: mutedTextColor }}>
               Overview
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div>
-                <div className="text-lg font-semibold" style={{ color: textColor }}>{totalInvocations}</div>
+                <div className="text-base sm:text-lg font-semibold" style={{ color: textColor }}>{totalInvocations}</div>
                 <div className="text-xs" style={{ color: mutedTextColor }}>Requests</div>
               </div>
               <div>
                 {avgLatency !== null ? (
                   <>
-                    <div className="text-lg font-semibold" style={{ color: textColor }}>{avgLatency}ms</div>
+                    <div className="text-base sm:text-lg font-semibold" style={{ color: textColor }}>{avgLatency}ms</div>
                     <div className="text-xs" style={{ color: mutedTextColor }}>Avg Response</div>
                   </>
                 ) : (
                   <>
-                    <div className="text-lg font-semibold" style={{ color: textColor }}>-</div>
+                    <div className="text-base sm:text-lg font-semibold" style={{ color: textColor }}>-</div>
                     <div className="text-xs" style={{ color: mutedTextColor }}>Avg Response</div>
                   </>
                 )}
               </div>
               <div className="group">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg font-semibold font-mono" style={{ color: textColor }}>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <span className="text-base sm:text-lg font-semibold font-mono truncate" style={{ color: textColor }}>
                     {deployment.id.substring(0, 8)}
                   </span>
                   <button
                     type="button"
                     aria-label="Copy deployment ID"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/5"
+                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/5 flex-shrink-0"
                     onClick={() => {
                       navigator.clipboard?.writeText(deployment.id);
                       setIdCopied(true);
@@ -215,7 +215,7 @@ export function DeploymentDetailsSidebar({
                     )}
                   </button>
                 </div>
-                <div className="text-xs" style={{ color: mutedTextColor }}>Deployment ID</div>
+                <div className="text-xs truncate" style={{ color: mutedTextColor }}>Deployment ID</div>
               </div>
             </div>
           </div>
@@ -227,20 +227,21 @@ export function DeploymentDetailsSidebar({
             </label>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="flex-1 text-sm rounded-[5px] px-3 py-2 border font-mono break-all" style={{ 
+                <div className="flex-1 text-xs sm:text-sm rounded-[5px] px-2 sm:px-3 py-2 border font-mono break-all overflow-wrap-anywhere" style={{ 
                   background: '#13111C',
                   borderColor: borderColor,
-                  color: textColor
+                  color: textColor,
+                  wordBreak: 'break-all'
                 }}>
                   {fullUrl}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onCopyUrl(deployment.id)}
-                  className="text-xs"
+                  className="text-xs flex-1 sm:flex-initial"
                 >
                   <Copy className="h-3.5 w-3.5 mr-1.5" />
                   Copy URL
@@ -249,7 +250,7 @@ export function DeploymentDetailsSidebar({
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open(fullUrl, '_blank')}
-                  className="text-xs"
+                  className="text-xs flex-1 sm:flex-initial"
                 >
                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                   Open
@@ -263,12 +264,12 @@ export function DeploymentDetailsSidebar({
             <label className="text-xs font-semibold uppercase tracking-wide mb-3 block" style={{ color: mutedTextColor }}>
               Actions
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => onToggle(deployment.id)}
                 disabled={togglingId === deployment.id || deletingId === deployment.id}
                 variant="default"
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 {togglingId === deployment.id ? (
                   <LoadingSpinner size="sm" className="mr-2" />
@@ -277,7 +278,8 @@ export function DeploymentDetailsSidebar({
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
                       <rect width="18" height="18" x="3" y="3" rx="2"/>
                     </svg>
-                    Stop Deployment
+                    <span className="hidden sm:inline">Stop Deployment</span>
+                    <span className="sm:hidden">Stop</span>
                   </>
                 ) : (
                   <>
@@ -285,7 +287,8 @@ export function DeploymentDetailsSidebar({
                       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                       <path d="M3 3v5h5"/>
                     </svg>
-                    Restart Deployment
+                    <span className="hidden sm:inline">Restart Deployment</span>
+                    <span className="sm:hidden">Restart</span>
                   </>
                 )}
               </Button>
@@ -293,21 +296,22 @@ export function DeploymentDetailsSidebar({
                 onClick={() => onDelete(deployment.id)}
                 disabled={togglingId === deployment.id || deletingId === deployment.id}
                 variant="ghost"
-                className="flex-1 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                className="flex-1 w-full sm:w-auto text-red-400 hover:text-red-500 hover:bg-red-500/10"
               >
                 {deletingId === deployment.id ? (
                   <LoadingSpinner size="sm" className="mr-2" />
                 ) : (
                   <Trash2 className="h-4 w-4 mr-2" />
                 )}
-                Delete Deployment
+                <span className="hidden sm:inline">Delete Deployment</span>
+                <span className="sm:hidden">Delete</span>
               </Button>
             </div>
           </div>
 
           {/* Recent Activity */}
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: mutedTextColor }}>
                 Recent Activity
               </label>
@@ -318,6 +322,7 @@ export function DeploymentDetailsSidebar({
                   onClick={() => refetchLogs()}
                   disabled={loadingLogs || fetchingLogs}
                   title="Refresh logs"
+                  className="h-8 w-8 p-0"
                 >
                   {(loadingLogs || fetchingLogs) ? (
                     <LoadingSpinner size="sm" />
@@ -335,10 +340,11 @@ export function DeploymentDetailsSidebar({
                   size="sm"
                   onClick={() => onViewDetailedLogs(deployment.id)}
                   title="View detailed logs"
-                  className="text-xs"
+                  className="text-xs h-8"
                 >
                   <FileText className="h-3.5 w-3.5 mr-1.5" />
-                  View All
+                  <span className="hidden sm:inline">View All</span>
+                  <span className="sm:hidden">All</span>
                 </Button>
               </div>
             </div>

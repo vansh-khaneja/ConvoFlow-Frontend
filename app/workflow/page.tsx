@@ -19,6 +19,7 @@ import { useWorkflowExecution } from '@/hooks/useWorkflowExecution';
 import { useWorkflowDeployment } from '@/hooks/useWorkflowDeployment';
 import { LoadingSpinner } from '@/components/ui-kit/loading-spinner';
 import { toast } from 'sonner';
+import MobileBlocker from '@/components/layout/MobileBlocker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -532,12 +533,15 @@ function WorkflowBuilderContent() {
 
 export default function WorkflowBuilder() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-screen" style={{ background: '#0D0C14', color: '#a1a1aa' }}>
-        <LoadingSpinner size="lg" text="Loading ..." />
-      </div>
-    }>
-      <WorkflowBuilderContent />
-    </Suspense>
+    <>
+      <MobileBlocker />
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen" style={{ background: '#0D0C14', color: '#a1a1aa' }}>
+          <LoadingSpinner size="lg" text="Loading ..." />
+        </div>
+      }>
+        <WorkflowBuilderContent />
+      </Suspense>
+    </>
   );
 }

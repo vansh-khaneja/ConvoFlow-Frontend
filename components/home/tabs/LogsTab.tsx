@@ -67,15 +67,15 @@ export function LogsTab() {
 
   return (
     <div className="flex-1 bg-[var(--background)] overflow-auto">
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl flex items-center gap-3 mb-2">
-                <FileText className="h-10 w-10" />
-                Logs
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl flex items-center gap-2 sm:gap-3 mb-2">
+                <FileText className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 flex-shrink-0" />
+                <span className="truncate">Logs</span>
               </h1>
-              <p className="text-[var(--text-muted)] text-lg">
+              <p className="text-[var(--text-muted)] text-sm sm:text-base lg:text-lg">
                 Inspect invocation history for your deployed workflows.
               </p>
             </div>
@@ -90,62 +90,66 @@ export function LogsTab() {
           />
         ) : (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
-                <Select value={selectedDeployment} onValueChange={setSelectedDeployment}>
-                  <SelectTrigger
-                    className="w-64 bg-[var(--card-bg)] border-[var(--border-color)]"
-                    disabled={loadingLogs || deployments.length === 0}
+            <div className="space-y-4 mb-6">
+              {/* Deployment Selector and Refresh */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <Select value={selectedDeployment} onValueChange={setSelectedDeployment}>
+                    <SelectTrigger
+                      className="w-full sm:w-64 bg-[var(--card-bg)] border-[var(--border-color)]"
+                      disabled={loadingLogs || deployments.length === 0}
+                    >
+                      <SelectValue placeholder="Select deployment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deployments.map((dep: any) => (
+                        <SelectItem key={dep.id} value={dep.id}>
+                          {(dep.name || 'Untitled')} • {dep.id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={refreshLogs}
+                    disabled={!selectedDeployment || loadingLogs || fetchingLogs}
+                    title="Refresh logs"
+                    className="flex-shrink-0"
                   >
-                    <SelectValue placeholder="Select deployment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deployments.map((dep: any) => (
-                      <SelectItem key={dep.id} value={dep.id}>
-                        {(dep.name || 'Untitled')} • {dep.id.slice(0, 8)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={refreshLogs}
-                  disabled={!selectedDeployment || loadingLogs || fetchingLogs}
-                  title="Refresh logs"
-                >
-                  {(loadingLogs || fetchingLogs) ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                      <path d="M3 3v5h5"/>
-                      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-                      <path d="M16 16h5v5"/>
-                    </svg>
-                  )}
-                </Button>
-              </div>
-              <div className="text-sm text-[var(--text-muted)]">
-                {total > 0
-                  ? `Showing ${offset + 1}-${Math.min(offset + logs.length, total)} of ${total} log${total !== 1 ? 's' : ''}`
-                  : `${logs.length} log${logs.length !== 1 ? 's' : ''}`}
+                    {(loadingLogs || fetchingLogs) ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        <path d="M16 16h5v5"/>
+                      </svg>
+                    )}
+                  </Button>
+                </div>
+                <div className="text-xs sm:text-sm text-[var(--text-muted)] text-center sm:text-right">
+                  {total > 0
+                    ? `Showing ${offset + 1}-${Math.min(offset + logs.length, total)} of ${total} log${total !== 1 ? 's' : ''}`
+                    : `${logs.length} log${logs.length !== 1 ? 's' : ''}`}
+                </div>
               </div>
             </div>
 
             {logs.length === 0 ? null : (
-              <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-[5px] overflow-hidden p-2">
-                {/* Table Header */}
-                <div className="grid grid-cols-[140px_80px_1fr_1fr_100px] gap-4 px-4 py-4 border-b border-[var(--border-color)] bg-[var(--card-hover)] mb-2">
+              <div className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-[5px] overflow-hidden">
+                {/* Desktop Table Header - Hidden on mobile */}
+                <div className="hidden lg:grid grid-cols-[140px_80px_1fr_1fr_100px] gap-4 px-4 py-4 border-b border-[var(--border-color)] bg-[var(--card-hover)]">
                   <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Time</div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Status</div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Query</div>
-                  <div className="text-xs font-semibold uppercase docs-wide text-[var(--text-muted)]">Response</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Response</div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Duration</div>
                 </div>
                 
-                {/* Log Entries - Console Style */}
-                <div className="divide-y divide-[var(--border-color)] mt-2">
+                {/* Log Entries */}
+                <div className="divide-y divide-[var(--border-color)]">
                   {logs.map((log) => {
                     const status = (log.status || 'unknown').toLowerCase();
                     const statusColor =
@@ -162,13 +166,57 @@ export function LogsTab() {
 
                     const isExpanded = expandedLog === log.id;
                     const shouldTruncate = !isExpanded;
-                    const truncatedQuery = shouldTruncate && queryText.length > 100 ? `${queryText.substring(0, 100)}...` : queryText;
-                    const truncatedResponse = shouldTruncate && responseText.length > 100 ? `${responseText.substring(0, 100)}...` : responseText;
+                    const truncatedQuery = shouldTruncate && queryText.length > 50 ? `${queryText.substring(0, 50)}...` : queryText;
+                    const truncatedResponse = shouldTruncate && responseText.length > 50 ? `${responseText.substring(0, 50)}...` : responseText;
 
                     return (
                       <div key={log.id}>
+                        {/* Mobile Card Layout */}
+                        <div className="lg:hidden">
+                          <div
+                            className="p-4 hover:bg-[var(--card-hover)] transition-colors cursor-pointer"
+                            onClick={() => setExpandedLog(isExpanded ? null : log.id)}
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs text-[var(--text-muted)] mb-1">
+                                  {formatDateTime(log.created_at)}
+                                </div>
+                                <div className={`text-sm font-semibold ${statusColor}`}>
+                                  {statusLabel}
+                                </div>
+                              </div>
+                              <div className="text-xs text-[var(--text-muted)] flex-shrink-0">
+                                {typeof log.latency_ms === 'number' ? `${Math.round(log.latency_ms)}ms` : '-'}
+                              </div>
+                            </div>
+                            {!isExpanded && (
+                              <div className="text-xs text-[var(--text-muted)] mt-2">
+                                Tap to view details
+                              </div>
+                            )}
+                          </div>
+                          {isExpanded && (
+                            <div className="px-4 pb-4 bg-[var(--card-hover)] border-t border-[var(--border-color)] space-y-3">
+                              <div>
+                                <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Query</div>
+                                <pre className="bg-[var(--card-bg)] rounded p-2 text-xs overflow-x-auto whitespace-pre-wrap break-words font-mono text-[var(--foreground)]">
+                                  {queryText}
+                                </pre>
+                              </div>
+                              <div>
+                                <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Response</div>
+                                <pre className={`bg-[var(--card-bg)] rounded p-2 text-xs overflow-x-auto whitespace-pre-wrap break-words font-mono ${log.error ? 'text-red-400' : 'text-[var(--foreground)]'}`}>
+                                  {responseText}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Desktop Table Layout */}
                         <div
-                          className="grid grid-cols-[140px_80px_1fr_1fr_100px] gap-4 px-4 py-3 hover:bg-[var(--card-hover)] transition-colors font-mono text-xs cursor-pointer"
+                          className="hidden lg:grid grid-cols-[140px_80px_1fr_1fr_100px] gap-4 px-4 py-3 hover:bg-[var(--card-hover)] transition-colors font-mono text-xs cursor-pointer"
                           onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                         >
                           {/* Time */}
@@ -201,7 +249,7 @@ export function LogsTab() {
                           </div>
                         </div>
                         {isExpanded && queryText.length > 100 && (
-                          <div className="px-4 pb-3 bg-[var(--card-hover)] border-t border-[var(--border-color)]">
+                          <div className="hidden lg:block px-4 pb-3 bg-[var(--card-hover)] border-t border-[var(--border-color)]">
                             <div className="mt-2">
                               <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1">Full Query</div>
                               <pre className="bg-[var(--card-bg)] rounded p-2 text-xs overflow-x-auto whitespace-pre-wrap break-words font-mono">
