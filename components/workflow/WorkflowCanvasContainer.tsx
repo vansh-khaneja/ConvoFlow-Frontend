@@ -6,6 +6,7 @@ import Canvas from '@/components/canvas/Canvas';
 import NodeSelectionSidebar from '@/components/canvas/NodeSelectionSidebar';
 import NodeConfigSidebar from '@/components/canvas/NodeConfigSidebar';
 import { useCanvasNodeConfig } from '@/hooks/useCanvasNodeConfig';
+import FinalTourMessage from '@/components/workflow/FinalTourMessage';
 
 interface WorkflowCanvasContainerProps {
   nodes: Node[];
@@ -34,6 +35,30 @@ interface WorkflowCanvasContainerProps {
   onCloseNodeSidebar: () => void;
   workflowName?: string;
   onRename?: (newName: string) => Promise<void>;
+  onConfigSidebarOpenChange?: (isOpen: boolean) => void;
+  // Guided tour
+  showAddNodeTourHint?: boolean;
+  showAddNodeTourStep?: number;
+  onTourSkip?: () => void;
+  onTourNextFromAdd?: () => void;
+  // Sidebar tours
+  showQueryNodeTourHint?: boolean;
+  showResponseNodeTourHint?: boolean;
+  onQueryTourSkip?: () => void;
+  onQueryTourNext?: () => void;
+  onResponseTourSkip?: () => void;
+  onResponseTourNext?: () => void;
+  // Connection guide
+  showConnectionGuide?: boolean;
+  queryNodeId?: string;
+  responseNodeId?: string;
+  areNodesConnected?: boolean;
+  // Run button tour
+  showRunTourHint?: boolean;
+  onRunTourNext?: () => void;
+  // Final message
+  showFinalMessage?: boolean;
+  sidebarOffset?: number; // Sidebar offset for positioning tour tip
 }
 
 export function WorkflowCanvasContainer({
@@ -62,7 +87,26 @@ export function WorkflowCanvasContainer({
   onNodeSelect,
   onCloseNodeSidebar,
   workflowName,
-  onRename
+  onRename,
+  onConfigSidebarOpenChange,
+  showAddNodeTourHint = false,
+  showAddNodeTourStep = 0,
+  onTourSkip,
+  onTourNextFromAdd,
+  showQueryNodeTourHint = false,
+  showResponseNodeTourHint = false,
+  onQueryTourSkip,
+  onQueryTourNext,
+  onResponseTourSkip,
+  onResponseTourNext,
+  showConnectionGuide = false,
+  queryNodeId,
+  responseNodeId,
+  areNodesConnected = false,
+  showRunTourHint = false,
+  onRunTourNext,
+  showFinalMessage = false,
+  sidebarOffset = 0
 }: WorkflowCanvasContainerProps) {
   // Manage config state at container level so it's shared with Canvas
   const {
@@ -105,6 +149,13 @@ export function WorkflowCanvasContainer({
     }
   }, [openConfigNodeId, selectedNode, closeConfig]);
 
+  // Notify parent when config sidebar open state changes
+  React.useEffect(() => {
+    if (onConfigSidebarOpenChange) {
+      onConfigSidebarOpenChange(!!openConfigNodeId);
+    }
+  }, [openConfigNodeId, onConfigSidebarOpenChange]);
+
   return (
     <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
       {/* Canvas Component */}
@@ -131,6 +182,17 @@ export function WorkflowCanvasContainer({
         hasUnsavedChanges={hasUnsavedChanges}
         workflowName={workflowName}
         onRename={onRename}
+        showAddNodeTourHint={showAddNodeTourHint}
+        showAddNodeTourStep={showAddNodeTourStep}
+        onTourSkip={onTourSkip}
+        onTourNextFromAdd={onTourNextFromAdd}
+        showConnectionGuide={showConnectionGuide}
+        queryNodeId={queryNodeId}
+        responseNodeId={responseNodeId}
+        areNodesConnected={areNodesConnected}
+        showRunTourHint={showRunTourHint}
+        onRunTourNext={onRunTourNext}
+        showFinalMessage={showFinalMessage}
         // Pass config handlers to Canvas
         hoveredNodeId={hoveredNodeId}
         openConfigNodeId={openConfigNodeId}
@@ -147,6 +209,12 @@ export function WorkflowCanvasContainer({
           onNodeSelect={onNodeSelect}
           onClose={onCloseNodeSidebar}
           existingNodes={nodes}
+          showQueryTourHint={showQueryNodeTourHint}
+          showResponseTourHint={showResponseNodeTourHint}
+          onQueryTourSkip={onQueryTourSkip}
+          onQueryTourNext={onQueryTourNext}
+          onResponseTourSkip={onResponseTourSkip}
+          onResponseTourNext={onResponseTourNext}
         />
       )}
 
@@ -160,6 +228,11 @@ export function WorkflowCanvasContainer({
           onSave={handleConfigSave}
           onUpdateParameters={onUpdateParameters}
         />
+      )}
+
+      {/* Final Tour Message - Step 7 */}
+      {showFinalMessage && (
+        <FinalTourMessage onClose={onTourSkip} sidebarOffset={sidebarOffset} />
       )}
     </div>
   );

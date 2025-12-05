@@ -26,6 +26,10 @@ interface CanvasToolbarProps {
   hasUnsavedChanges?: boolean;
   workflowName?: string;
   onRename?: (newName: string) => Promise<void>;
+  // Run button tour
+  showRunTourHint?: boolean;
+  onRunTourNext?: () => void;
+  onRunTourSkip?: () => void;
 }
 
 export default function CanvasToolbar({
@@ -42,7 +46,10 @@ export default function CanvasToolbar({
   isSaving,
   hasUnsavedChanges,
   workflowName,
-  onRename
+  onRename,
+  showRunTourHint = false,
+  onRunTourNext,
+  onRunTourSkip
 }: CanvasToolbarProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(workflowName || 'Untitled Workflow');
@@ -257,14 +264,48 @@ export default function CanvasToolbar({
           />
 
           {/* Execute Button - Prominent but refined */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onExecute}
-                disabled={isExecuting || !canExecute}
-                size="default"
-                className="h-9 px-5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] transition-all duration-200"
-              >
+          <div className="relative">
+            {showRunTourHint && (
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full mt-3 w-72 rounded-lg border border-[var(--primary)]/40 bg-gradient-to-r from-[var(--primary)]/10 to-[var(--primary)]/5 px-3 py-2.5 text-xs shadow-lg z-50">
+                {/* Arrow pointing up to Run button */}
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[8px] border-l-transparent border-r-transparent border-b-[var(--primary)]/40"></div>
+                <p className="font-semibold text-[var(--foreground)] mb-1">
+                  Step 6 · Run your workflow
+                </p>
+                <p className="text-[var(--text-muted)] mb-2">
+                  Click <span className="font-semibold">Run</span> to test your chatbot workflow.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={onRunTourSkip}
+                    className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onRunTourNext}
+                    className="text-[11px] font-medium px-2 py-1 rounded bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={onExecute}
+                  disabled={isExecuting || !canExecute}
+                  size="default"
+                  data-tutorial="run-button"
+                  className={`h-9 px-5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] transition-all duration-200 ${
+                    showRunTourHint
+                      ? 'ring-2 ring-[var(--primary)]/50 ring-offset-2 ring-offset-transparent'
+                      : ''
+                  }`}
+                >
                 {isExecuting ? (
                   <>
                     <LoadingSpinner size="sm" />
@@ -282,6 +323,7 @@ export default function CanvasToolbar({
               <p>Run workflow (Ctrl+Enter)</p>
             </TooltipContent>
           </Tooltip>
+          </div>
 
           {/* Deploy Button - Minimal */}
           {onDeployWorkflow && (

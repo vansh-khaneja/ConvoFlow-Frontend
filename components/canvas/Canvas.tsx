@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ReactFlow,
   Node,
@@ -19,6 +19,7 @@ import NodeWithConfig from './NodeWithConfig';
 import CustomEdge from './CustomEdge';
 import { useCanvasNodeConfig } from '@/hooks/useCanvasNodeConfig';
 import { transformNodesForExecution, transformEdgesForExecution, canExecuteWorkflow } from '@/lib/canvas/canvasUtils';
+import ConnectionGuide from '@/components/workflow/ConnectionGuide';
 
 interface CanvasProps {
   nodes: Node[];
@@ -53,6 +54,18 @@ interface CanvasProps {
   handleConfigOpen?: (nodeId: string, isOpen: boolean) => void;
   handlePaneClick?: () => void;
   clearHoverState?: () => void;
+  // Guided tour
+  showAddNodeTourHint?: boolean;
+  showAddNodeTourStep?: number;
+  onTourSkip?: () => void;
+  onTourNextFromAdd?: () => void;
+  showConnectionGuide?: boolean;
+  queryNodeId?: string;
+  responseNodeId?: string;
+  areNodesConnected?: boolean;
+  showRunTourHint?: boolean;
+  onRunTourNext?: () => void;
+  showFinalMessage?: boolean;
 }
 
 export default function Canvas({
@@ -84,8 +97,21 @@ export default function Canvas({
   setHoveredNodeId: propSetHoveredNodeId,
   handleConfigOpen: propHandleConfigOpen,
   handlePaneClick: propHandlePaneClick,
-  clearHoverState: propClearHoverState
+  clearHoverState: propClearHoverState,
+  showAddNodeTourHint = false,
+  showAddNodeTourStep = 0,
+  onTourSkip,
+  onTourNextFromAdd,
+  showConnectionGuide = false,
+  queryNodeId,
+  responseNodeId,
+  areNodesConnected = false,
+  showRunTourHint = false,
+  onRunTourNext,
+  showFinalMessage = false
 }: CanvasProps) {
+  const [isConnecting, setIsConnecting] = useState(false);
+  
   // Use props if provided, otherwise fall back to hook (for backward compatibility)
   const {
     hoveredNodeId: hookHoveredNodeId,
@@ -150,6 +176,8 @@ export default function Canvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={() => setIsConnecting(true)}
+        onConnectEnd={() => setIsConnecting(false)}
         onNodeClick={(event, node) => {
           clearHoverState(); // Hide tooltip when node is clicked
           // Open config sidebar for the clicked node (close if already open)
@@ -206,16 +234,40 @@ export default function Canvas({
           hasUnsavedChanges={hasUnsavedChanges}
           workflowName={workflowName}
           onRename={onRename}
+          showRunTourHint={showRunTourHint}
+          onRunTourNext={onRunTourNext}
+          onRunTourSkip={onTourSkip}
         />
 
-        {/* Add Button */}
-        <CanvasAddButton onAddNode={onAddNode} />
+        {/* Add Button - with optional first-time user hint */}
+        <CanvasAddButton
+          onAddNode={onAddNode}
+          showTourHint={showAddNodeTourHint}
+          showTourStep={showAddNodeTourStep}
+          onTourNext={onTourNextFromAdd}
+          onTourSkip={onTourSkip}
+          isEmpty={nodes.length === 0}
+          showTourHint={showAddNodeTourHint}
+          onTourSkip={onTourSkip}
+          onTourNext={onTourNextFromAdd}
+        />
 
         {/* Custom Zoom Controls */}
         <CanvasZoomControls />
 
         {/* Hover Tooltip - "Click to configure" - positioned above the hovered node */}
         <NodeHoverTooltip hoveredNodeId={hoveredNodeId} openConfigNodeId={openConfigNodeId} />
+
+        {/* Connection Guide - Step 5 - must be inside ReactFlow for context */}
+        {showConnectionGuide && (
+          <ConnectionGuide
+            queryNodeId={queryNodeId}
+            responseNodeId={responseNodeId}
+            onSkip={onTourSkip}
+            isConnecting={isConnecting}
+            areNodesConnected={areNodesConnected}
+          />
+        )}
       </ReactFlow>
     </div>
   );

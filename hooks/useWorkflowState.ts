@@ -87,10 +87,26 @@ export function useWorkflowState() {
       });
     }
     
+    // Calculate position based on node type
+    // QueryNode goes on the left, ResponseNode on the right, others in center
+    let position: { x: number; y: number };
+    const centerY = 250; // Center vertically on canvas
+    
+    if (isQueryNode) {
+      // QueryNode: position on the left
+      position = { x: 200, y: centerY };
+    } else if (isResponseNode) {
+      // ResponseNode: position on the right
+      position = { x: 900, y: centerY };
+    } else {
+      // Other nodes: random position in center area
+      position = { x: 400 + Math.random() * 200, y: centerY + (Math.random() - 0.5) * 200 };
+    }
+    
     const newNode: Node = {
       id: `${nodeType}_${Date.now()}`,
       type: 'custom',
-      position: { x: 200 + Math.random() * 300, y: 150 + Math.random() * 200 },
+      position,
       data: {
         nodeSchema,
         parameters: initialParameters,

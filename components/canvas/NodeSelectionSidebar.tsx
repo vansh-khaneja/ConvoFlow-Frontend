@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, X, Folder, Zap, Database, MessageSquare, Code, Globe, Settings } from 'lucide-react';
 import { Button } from '@/components/ui-kit/button';
 import { Input } from '@/components/ui-kit/input';
@@ -59,17 +59,48 @@ interface NodeSelectionSidebarProps {
   onNodeSelect: (nodeType: string) => void;
   onClose: () => void;
   existingNodes?: Array<{ id: string; data?: any }>; // Current nodes in the workflow
+  // Guided tour for QueryNode and ResponseNode
+  showQueryTourHint?: boolean;
+  showResponseTourHint?: boolean;
+  onQueryTourSkip?: () => void;
+  onQueryTourNext?: () => void;
+  onResponseTourSkip?: () => void;
+  onResponseTourNext?: () => void;
 }
 
 export default function NodeSelectionSidebar({
   nodes,
   onNodeSelect,
   onClose,
-  existingNodes = []
+  existingNodes = [],
+  showQueryTourHint = false,
+  showResponseTourHint = false,
+  onQueryTourSkip,
+  onQueryTourNext,
+  onResponseTourSkip,
+  onResponseTourNext
 }: NodeSelectionSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Detect if a Query node already exists in the canvas
+  const hasQueryNode = useMemo(() => {
+    return existingNodes.some(existingNode => {
+      const schema = existingNode.data?.nodeSchema;
+      const nodeId = schema?.node_id?.toLowerCase() || '';
+      return nodeId === 'querynode' || (nodeId.includes('query') && !nodeId.includes('textinput'));
+    });
+  }, [existingNodes]);
+
+  // Detect if a Response node already exists in the canvas
+  const hasResponseNode = useMemo(() => {
+    return existingNodes.some(existingNode => {
+      const schema = existingNode.data?.nodeSchema;
+      const nodeId = schema?.node_id?.toLowerCase() || '';
+      return nodeId.includes('response');
+    });
+  }, [existingNodes]);
 
   // Get all nodes as a flat list
   const allNodes = useMemo(() => {
@@ -109,6 +140,20 @@ export default function NodeSelectionSidebar({
 
     return filtered;
   }, [allNodes, selectedCategory, searchTerm]);
+
+  // If tour asks for QueryNode but one is already present, auto-complete this step
+  useEffect(() => {
+    if (showQueryTourHint && hasQueryNode && onQueryTourNext) {
+      onQueryTourNext();
+    }
+  }, [showQueryTourHint, hasQueryNode, onQueryTourNext]);
+
+  // If tour asks for ResponseNode but one is already present, auto-complete this step
+  useEffect(() => {
+    if (showResponseTourHint && hasResponseNode && onResponseTourNext) {
+      onResponseTourNext();
+    }
+  }, [showResponseTourHint, hasResponseNode, onResponseTourNext]);
 
   // Extract icon from html_template if styling.icon is empty
   const extractIconFromTemplate = (htmlTemplate: string | undefined): string | null => {
@@ -306,6 +351,11 @@ export default function NodeSelectionSidebar({
             const isSelected = selectedNodeId === node.node_id;
             const nodeCategory = node.category || 'Other';
             const showCategoryBadge = selectedCategory !== 'all' || searchTerm.length > 0;
+
+            // Determine if this is the QueryNode or ResponseNode for the tutorial
+            const nodeIdLower = node.node_id.toLowerCase();
+            const isQueryNodeForTour = nodeIdLower === 'querynode' || (nodeIdLower.includes('query') && !nodeIdLower.includes('textinput'));
+            const isResponseNodeForTour = nodeIdLower.includes('response');
             
             // Check if this is a response node and one already exists
             const isResponseNode = node.node_id.toLowerCase().includes('response');
@@ -317,11 +367,63 @@ export default function NodeSelectionSidebar({
             
             return (
               <div key={node.node_id}>
+                {/* Tour hint appears right before QueryNode item */}
+                {showQueryTourHint && !hasQueryNode && isQueryNodeForTour && (
+                  <div className="relative mb-3 px-3 py-2.5 rounded-lg border border-[var(--primary)]/40 bg-gradient-to-r from-[var(--primary)]/10 to-[var(--primary)]/5 text-xs shadow-lg">
+                    {/* Arrow pointing down to QueryNode */}
+                    <div className="absolute -bottom-2 left-6 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-l-transparent border-r-transparent border-t-[var(--primary)]/40"></div>
+                    <p className="font-semibold text-[var(--foreground)] mb-1">
+                      Step 2 · Click this QueryNode
+                    </p>
+                    <p className="text-[var(--text-muted)] mb-2">
+                      This node receives user input in your chatbot workflow.
+                    </p>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={onQueryTourSkip}
+                        className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* Tour hint appears right before ResponseNode item */}
+                {showResponseTourHint && !hasResponseNode && isResponseNodeForTour && (
+                  <div className="relative mb-3 px-3 py-2.5 rounded-lg border border-[var(--primary)]/40 bg-gradient-to-r from-[var(--primary)]/10 to-[var(--primary)]/5 text-xs shadow-lg">
+                    {/* Arrow pointing down to ResponseNode */}
+                    <div className="absolute -bottom-2 left-6 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-l-transparent border-r-transparent border-t-[var(--primary)]/40"></div>
+                    <p className="font-semibold text-[var(--foreground)] mb-1">
+                      Step 4 · Click this ResponseNode
+                    </p>
+                    <p className="text-[var(--text-muted)] mb-2">
+                      This node sends the final response back to the user.
+                    </p>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={onResponseTourSkip}
+                        className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div
                   onClick={() => {
                     if (isDisabled) return;
                     setSelectedNodeId(node.node_id);
                     onNodeSelect(node.node_id);
+
+                    // If this is the guided QueryNode or ResponseNode, advance the tour
+                    if (isQueryNodeForTour && onQueryTourNext) {
+                      onQueryTourNext();
+                    }
+                    if (isResponseNodeForTour && onResponseTourNext) {
+                      onResponseTourNext();
+                    }
                   }}
                   className={`relative flex items-start gap-3 px-4 py-3.5 rounded-[5px] node-item-hover ${
                     isDisabled 
@@ -330,6 +432,11 @@ export default function NodeSelectionSidebar({
                   } ${
                     isSelected 
                       ? 'node-item-selected' 
+                      : ''
+                  } ${
+                    (showQueryTourHint && !hasQueryNode && isQueryNodeForTour) ||
+                    (showResponseTourHint && !hasResponseNode && isResponseNodeForTour)
+                      ? 'ring-2 ring-[var(--primary)]/50 ring-offset-2 ring-offset-[#13111C]'
                       : ''
                   }`}
                 >

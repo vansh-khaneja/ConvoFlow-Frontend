@@ -18,13 +18,18 @@ interface ChatPreviewProps {
   onClose: () => void;
   onSendMessage?: (message: string) => void;
   isExecuting?: boolean;
-  isSidebarOpen?: boolean;
+  sidebarOffset?: number; // Total right sidebar width (node list or config)
 }
 
 const MAX_MESSAGE_LENGTH = 200; // Characters before truncation
-const SIDEBAR_WIDTH = 384; // 96 * 4 = 384px (w-96)
 
-export default function ChatPreview({ messages = [], onClose, onSendMessage, isExecuting = false, isSidebarOpen = false }: ChatPreviewProps) {
+export default function ChatPreview({
+  messages = [],
+  onClose,
+  onSendMessage,
+  isExecuting = false,
+  sidebarOffset = 0
+}: ChatPreviewProps) {
   const [inputValue, setInputValue] = useState('');
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -93,13 +98,14 @@ export default function ChatPreview({ messages = [], onClose, onSendMessage, isE
 
     if (!userMessage && !botMessage) return null;
 
-    // Calculate right position based on sidebar state
-    const rightPosition = isSidebarOpen ? SIDEBAR_WIDTH + 16 : 16; // 16px = 1rem margin
+    // Calculate right position based on sidebar state (selection or config)
+    const rightPosition = sidebarOffset + 16; // 16px = 1rem margin
     
     return (
       <div 
         className="fixed bottom-4 z-50 w-[380px] max-w-[90vw] transition-all duration-300 ease-in-out"
         style={{ right: `${rightPosition}px` }}
+        data-chat-preview="true"
       >
         <Card className="shadow-2xl overflow-hidden backdrop-blur-sm">
           {/* Header */}
@@ -153,13 +159,14 @@ export default function ChatPreview({ messages = [], onClose, onSendMessage, isE
     );
   }
 
-  // Calculate right position based on sidebar state
-  const rightPosition = isSidebarOpen ? SIDEBAR_WIDTH + 16 : 16; // 16px = 1rem margin
+  // Calculate right position based on sidebar state (selection or config)
+  const rightPosition = sidebarOffset + 16; // 16px = 1rem margin
 
   return (
     <div 
       className="fixed bottom-4 z-50 w-[380px] max-w-[90vw] transition-all duration-300 ease-in-out"
       style={{ right: `${rightPosition}px` }}
+      data-chat-preview="true"
     >
       <Card className="shadow-2xl overflow-hidden backdrop-blur-sm">
         {/* Header */}
